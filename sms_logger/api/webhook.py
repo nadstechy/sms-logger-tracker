@@ -23,9 +23,9 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# Note: The route must match the rewrite in vercel.json
+# IMPORTANT: This route must match the file path '/api/webhook'
 @app.route('/api/webhook', methods=['POST'])
-def webhook():
+def webhook_handler():
     # 1. Security Check
     secret = request.headers.get('x-api-secret')
     if secret != os.environ.get('API_SECRET'):
@@ -33,14 +33,12 @@ def webhook():
 
     try:
         data = request.json
-        # 2. Extract Data (Safely)
         sender = data.get('sender', 'Unknown')
-        message_body = data.get('message', '')
+        message = data.get('message', '')
         
-        # 3. Write to Firestore
         doc_ref = db.collection('messages').add({
             'sender': sender,
-            'message': message_body,
+            'message': message,
             'timestamp': firestore.SERVER_TIMESTAMP
         })
 
@@ -49,6 +47,6 @@ def webhook():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Vercel requires this exact line to run the app
+# This is required for Vercel to find the app
 if __name__ == '__main__':
     app.run()
